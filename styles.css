@@ -50,17 +50,12 @@ body {
 
 /* NAV =================================================================== */
 nav {
-  position: sticky;
-  top: 0;
-  background: rgba(244, 245, 247, 0.85);
-  backdrop-filter: saturate(180%) blur(20px);
-  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  background: var(--bg);
   border-bottom: 1px solid var(--border);
-  padding: 16px 32px;
+  padding: 24px 32px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  z-index: 100;
 }
 nav .brand {
   display: flex;
@@ -68,14 +63,14 @@ nav .brand {
   text-decoration: none;
 }
 nav .brand img {
-  height: 80px;
+  height: 200px;
   width: auto;
   display: block;
 }
 nav .nav-links {
   display: flex;
-  gap: 28px;
-  font-size: 14px;
+  gap: 32px;
+  font-size: 15px;
   font-weight: 500;
 }
 nav .nav-links a {
@@ -525,7 +520,7 @@ footer {
   gap: 8px;
 }
 .footer-brand img {
-  height: 64px;
+  height: 100px;
   width: auto;
   margin-bottom: 4px;
 }
@@ -559,9 +554,9 @@ footer {
 
 /* RESPONSIVE ============================================================ */
 @media (max-width: 640px) {
-  nav { padding: 12px 20px; }
+  nav { padding: 20px; }
   nav .nav-links { gap: 16px; font-size: 13px; }
-  nav .brand img { height: 56px; }
+  nav .brand img { height: 100px; }
   .hero { padding: 70px 20px 80px; }
   .hero.compact { padding: 50px 20px 50px; }
   .hero .lede { font-size: 16px; }
