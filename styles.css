@@ -52,7 +52,7 @@ body {
 nav {
   background: var(--bg);
   border-bottom: 1px solid var(--border);
-  padding: 24px 32px;
+  padding: 16px 32px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -520,7 +520,7 @@ footer {
   gap: 8px;
 }
 .footer-brand img {
-  height: 100px;
+  height: 60px;
   width: auto;
   margin-bottom: 4px;
 }
@@ -556,7 +556,7 @@ footer {
 @media (max-width: 640px) {
   nav { padding: 20px; }
   nav .nav-links { gap: 16px; font-size: 13px; }
-  nav .brand img { height: 100px; }
+  nav .brand img { height: 80px; }
   .hero { padding: 70px 20px 80px; }
   .hero.compact { padding: 50px 20px 50px; }
   .hero .lede { font-size: 16px; }
