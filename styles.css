@@ -63,7 +63,7 @@ nav .brand {
   text-decoration: none;
 }
 nav .brand img {
-  height: 200px;
+  height: 44px;
   width: auto;
   display: block;
 }
@@ -306,50 +306,6 @@ section.bg-white { background: var(--surface); }
   letter-spacing: 1px;
 }
 
-/* REVIEWS PLACEHOLDER =================================================== */
-.reviews-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 16px;
-  margin-top: 8px;
-}
-.review-card {
-  background: var(--surface);
-  border: 1px solid var(--border-soft);
-  border-radius: var(--radius-lg);
-  padding: 28px;
-  position: relative;
-  box-shadow: var(--shadow-sm);
-}
-.review-card .stars {
-  color: var(--primary);
-  font-size: 14px;
-  letter-spacing: 2px;
-  margin-bottom: 16px;
-  opacity: 0.4;
-}
-.review-card .review-text {
-  font-size: 15px;
-  color: var(--text-muted);
-  font-style: italic;
-  line-height: 1.6;
-  margin-bottom: 24px;
-  min-height: 60px;
-}
-.review-card .review-meta {
-  font-size: 12px;
-  color: var(--text-subtle);
-  border-top: 1px solid var(--border-soft);
-  padding-top: 16px;
-}
-.review-card .review-meta strong {
-  display: block;
-  color: var(--text);
-  font-size: 13px;
-  font-weight: 600;
-  margin-bottom: 2px;
-}
-
 /* DOWNLOAD CTA ========================================================== */
 .download-section {
   background: var(--primary-soft);
@@ -520,7 +476,7 @@ footer {
   gap: 8px;
 }
 .footer-brand img {
-  height: 60px;
+  height: 26px;
   width: auto;
   margin-bottom: 4px;
 }
@@ -556,7 +512,7 @@ footer {
 @media (max-width: 640px) {
   nav { padding: 20px; }
   nav .nav-links { gap: 16px; font-size: 13px; }
-  nav .brand img { height: 80px; }
+  nav .brand img { height: 34px; }
   .hero { padding: 70px 20px 80px; }
   .hero.compact { padding: 50px 20px 50px; }
   .hero .lede { font-size: 16px; }
@@ -565,4 +521,27 @@ footer {
   .download-section { padding: 70px 20px; }
   footer { padding: 40px 20px 24px; }
   .footer-inner { flex-direction: column; gap: 20px; }
+}
+/* ACCESSIBILITY & POLISH ================================================ */
+a:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+img { max-width: 100%; }
+
+.footer-bottom { line-height: 1.7; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .btn-primary:hover,
+  .feature:hover,
+  .appstore-badge:hover { transform: none; }
 }
