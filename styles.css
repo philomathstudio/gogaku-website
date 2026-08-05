@@ -63,8 +63,10 @@ nav .brand {
   text-decoration: none;
 }
 nav .brand img {
-  height: 44px;
+  height: 60px;
   width: auto;
+  flex: none;
+  object-fit: contain;
   display: block;
 }
 nav .nav-links {
@@ -473,11 +475,14 @@ footer {
 .footer-brand {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: 8px;
 }
 .footer-brand img {
   height: 26px;
   width: auto;
+  flex: none;
+  object-fit: contain;
   margin-bottom: 4px;
 }
 .footer-brand .tagline {
@@ -512,7 +517,7 @@ footer {
 @media (max-width: 640px) {
   nav { padding: 20px; }
   nav .nav-links { gap: 16px; font-size: 13px; }
-  nav .brand img { height: 34px; }
+  nav .brand img { height: 42px; }
   .hero { padding: 70px 20px 80px; }
   .hero.compact { padding: 50px 20px 50px; }
   .hero .lede { font-size: 16px; }
