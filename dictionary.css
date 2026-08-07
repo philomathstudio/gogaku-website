@@ -1,0 +1,695 @@
+/* ==========================================================================
+   GOGAKU — Dictionary page
+   Mirrors the in-app dictionary. Loads after styles.css, reuses its tokens.
+   ========================================================================== */
+
+:root {
+  /* Taken directly from the app's theme.js so the two cannot drift. */
+  --oxford:      #2e5fa0;   /* colors.primary — Royal Oxford */
+  --oxford-deep: #2a548f;   /* colors.primaryDark */
+  --vocab:       #4a85d4;   /* colors.vocabAccent */
+  --vocab-badge: #3873c4;   /* colors.badgeSolidVocab */
+  --kanji:       #d04f12;   /* colors.kanjiAccent */
+  --pine:        #138a73;   /* colors.hiragana / badgeSolidJLPT */
+  --plum:        #d05a85;   /* colors.pink */
+  --band:        #eef0f4;   /* colors.surfaceSheet */
+  --line:        #cbd5e1;   /* colors.border */
+  --line-soft:   #e2e8f0;   /* colors.borderLight */
+
+  --card-radius: 20px;                               /* radius.xl */
+  --card-shadow: 0 4px 12px rgba(41, 74, 120, 0.10); /* shadows.lg */
+
+  --jp: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic",
+        "Noto Sans JP", "Meiryo", sans-serif;
+}
+
+[hidden] { display: none !important; }
+
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* The site header and the search bar stick together as one block. */
+nav {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  border-bottom: 0;
+}
+
+/* SEARCH + FILTERS ====================================================== */
+.dict-bar {
+  position: sticky;
+  top: var(--nav-h, 92px);
+  z-index: 30;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+.dict-bar .wrap { max-width: 1080px; margin: 0 auto; padding: 4px 32px 0; }
+
+.dict-field { position: relative; display: flex; align-items: center; }
+#q {
+  width: 100%;
+  font-family: var(--jp);
+  font-size: 16px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 26px;
+  padding: 14px 44px 14px 20px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+#q::placeholder { font-family: inherit; color: var(--text-subtle); }
+#q::-webkit-search-cancel-button,
+#q::-webkit-search-decoration,
+#q::-webkit-search-results-button {
+  -webkit-appearance: none;
+  appearance: none;
+  display: none;
+}
+#q:focus {
+  outline: none;
+  border-color: var(--oxford);
+  box-shadow: 0 0 0 3px rgba(46, 95, 160, 0.15);
+}
+.dict-clear {
+  position: absolute;
+  right: 12px;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  color: var(--text-subtle);
+  font-size: 22px;
+  line-height: 1;
+  padding: 4px 10px;
+  display: none;
+}
+.dict-clear.on { display: block; }
+.dict-clear:hover { color: var(--text); }
+
+/* facet tabs */
+.facet-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 14px 0 14px;
+}
+
+/* option band */
+.facet-band {
+  background: var(--band);
+  border-top: 1px solid #e0e3e8;
+  border-bottom: 1px solid #e0e3e8;
+}
+.facet-band .wrap { padding: 12px 32px; }
+.facet-scroll {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: thin;
+}
+.facet-scroll::-webkit-scrollbar { height: 5px; }
+.facet-scroll::-webkit-scrollbar-thumb { background: #c8cdd6; border-radius: 3px; }
+
+/* pills */
+.pill {
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  padding: 9px 18px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex: none;
+  transition: background 0.13s, border-color 0.13s, color 0.13s;
+}
+.pill:hover { border-color: var(--text-muted); color: var(--text); }
+.pill[aria-pressed="true"],
+.pill[aria-selected="true"] {
+  color: #fff;
+  font-weight: 600;
+  background: var(--tint, var(--oxford));
+  border-color: var(--tint, var(--oxford));
+}
+
+/* radical grid */
+.rad-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(46px, 1fr));
+  gap: 2px;
+  margin-top: 10px;
+  max-height: 210px;
+  overflow-y: auto;
+}
+.rad-cell {
+  font-family: var(--jp);
+  font-size: 19px;
+  color: var(--text);
+  background: none;
+  border: 0;
+  border-radius: 6px;
+  height: 46px;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.rad-cell:hover { background: rgba(208, 79, 18, 0.12); }
+.rad-cell[aria-pressed="true"] { background: var(--kanji); color: #fff; }
+
+/* active chips */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 12px 32px;
+}
+.chip {
+  font-family: var(--jp);
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--tint, var(--oxford));
+  border: 0;
+  border-radius: 20px;
+  padding: 6px 13px;
+  cursor: pointer;
+}
+.chip .x { opacity: 0.75; margin-left: 6px; }
+.chip:hover .x { opacity: 1; }
+.chip-clear {
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--text-muted);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 6px 14px;
+  cursor: pointer;
+}
+.chip-clear:hover { border-color: var(--text-muted); color: var(--text); }
+
+/* LAYOUT ================================================================ */
+/* styles.css sets `section { padding: 100px 32px }` for the marketing pages.
+   The results column is a <section>, so it has to opt out. */
+.dict-main section { padding: 0; }
+
+.dict-main {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 24px 32px 80px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
+}
+.dict-count { font-size: 13px; color: var(--text-subtle); margin: 0 0 10px 2px; }
+
+/* THREE MODES ===========================================================
+   idle     — nothing searched: just the stroke animation, centred
+   browsing — results on the left, animation waiting on the right
+   entry    — results on the left, the entry card on the right          */
+
+.dict-main[data-mode="idle"] { grid-template-columns: 1fr; }
+.dict-main[data-mode="idle"] .results-col,
+.dict-main[data-mode="idle"] .detail,
+.dict-main[data-mode="browsing"] .detail,
+.dict-main[data-mode="entry"] .stroke-stage { display: none; }
+
+.stroke-stage {
+  position: sticky;
+  top: var(--sticky-top, 220px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 340px;
+}
+/* Line the waiting animation up with the top of the results list. */
+.dict-main[data-mode="browsing"] .stroke-stage { margin-top: 29px; }
+
+.dict-main[data-mode="idle"] .stroke-stage {
+  position: static;
+  margin-top: 0;
+  /* Fill whatever the sticky header leaves, so the character sits centred. */
+  min-height: max(300px, calc(100vh - var(--sticky-top, 220px) - 56px));
+}
+
+.stroke-stage { cursor: pointer; }
+.stroke-stage:hover .stroke-holder { transform: scale(1.03); }
+.stroke-stage:active .stroke-holder { transform: scale(0.99); }
+
+.stroke-holder {
+  width: 240px;
+  max-width: 62vw;
+  aspect-ratio: 1 / 1;
+  opacity: 1;
+  transition: opacity 450ms ease, transform 180ms ease;
+}
+.stroke-stage.fading .stroke-holder { opacity: 0; }
+.dict-main[data-mode="idle"] .stroke-holder { width: 300px; }
+.stroke-holder svg { width: 100%; height: 100%; display: block; }
+.dict-count b { color: var(--text); font-weight: 600; }
+
+/* RESULTS =============================================================== */
+/* Same surface treatment as .card, so the list and the entry read as siblings. */
+.results {
+  background: var(--surface);
+  border: 0;
+  border-radius: var(--card-radius);
+  overflow: hidden;
+  box-shadow: var(--card-shadow);
+}
+.row {
+  display: grid;
+  grid-template-columns: minmax(72px, 0.85fr) minmax(64px, 0.8fr) 1.5fr;
+  gap: 14px;
+  align-items: baseline;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: 0;
+  border-top: 1px solid var(--border-soft);
+  padding: 15px 26px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.12s;
+}
+.row:first-child { border-top: 0; }
+.row:hover { background: var(--bg); }
+.row[aria-current="true"] { background: var(--primary-soft); }
+
+.row-lead {
+  font-family: var(--jp);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--vocab);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.row[data-type="k"] .row-lead { color: var(--kanji); font-size: 21px; }
+.row-alt {
+  font-family: var(--jp);
+  font-size: 14px;
+  color: var(--text-subtle);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.row-mean {
+  font-size: 14px;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* PAGER ================================================================= */
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 18px;
+}
+.pager:empty { display: none; }
+
+.pager-num, .pager-step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  height: 34px;
+  padding: 0 8px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink-muted, #64748b);
+  background: var(--surface);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: border-color 0.13s, color 0.13s, background 0.13s;
+}
+.pager-num:hover:not([aria-current]),
+.pager-step:hover:not([disabled]) {
+  border-color: var(--oxford);
+  color: var(--oxford);
+}
+.pager-num[aria-current="page"] {
+  background: var(--oxford);
+  border-color: var(--oxford);
+  color: #fff;
+  font-weight: 600;
+  cursor: default;
+}
+.pager-step[disabled] { opacity: 0.4; cursor: default; }
+.pager-step svg {
+  width: 15px;
+  height: 15px;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+}
+.pager-gap {
+  min-width: 22px;
+  text-align: center;
+  color: var(--ink-subtle, #94a3b8);
+  font-size: 14px;
+  user-select: none;
+}
+
+.dict-empty { padding: 56px 24px; text-align: center; color: var(--text-subtle); }
+.dict-empty .glyph {
+  font-family: var(--jp);
+  font-size: 44px;
+  color: var(--border);
+  display: block;
+  margin-bottom: 14px;
+}
+.dict-empty p { font-size: 14px; }
+
+/* DETAIL ================================================================ */
+/* The card pins under the search bar and stays there. If it is taller than the
+   space left on screen, its own contents scroll — so the bottom is always
+   reachable and the card never travels off the top. */
+.detail {
+  position: sticky;
+  top: var(--sticky-top, 220px);
+  margin-top: 29px;
+  align-self: start;
+}
+.detail-scroll {
+  max-height: calc(100vh - var(--sticky-top, 220px) - 28px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  /* Padding + matching negative margin so the card shadows aren't clipped. */
+  padding: 8px;
+  margin: -8px;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+  overscroll-behavior: contain;
+}
+.detail-scroll::-webkit-scrollbar { width: 8px; }
+.detail-scroll::-webkit-scrollbar-track { background: transparent; }
+.detail-scroll::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+.detail-scroll::-webkit-scrollbar-thumb:hover { background-color: #94a3b8; background-clip: content-box; }
+
+.card {
+  background: var(--surface);
+  border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow);
+  padding: 24px 26px;
+  margin-bottom: 14px;
+}
+.card:last-child { margin-bottom: 0; }
+.card-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+  margin-bottom: 6px;
+}
+
+.head-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.head-chip {
+  font-family: var(--jp);
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  border-radius: 20px;
+  padding: 5px 13px;
+}
+.hc-jlpt { background: var(--pine); }
+.hc-rad  { background: var(--kanji); }
+.hc-cat  { background: var(--plum); }
+.hc-pos  { background: var(--vocab-badge); }
+
+/* kanji header */
+.kanji-head { display: flex; align-items: flex-start; gap: 28px; }
+.kanji-glyph {
+  font-family: var(--jp);
+  font-size: 92px;
+  line-height: 1;
+  color: var(--kanji);
+  flex: none;
+}
+.kanji-readings { flex: 1; min-width: 0; padding-top: 6px; }
+.kanji-readings .val {
+  font-family: var(--jp);
+  font-size: 26px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 22px;
+  word-break: break-word;
+}
+.kanji-readings .val:last-child { margin-bottom: 0; }
+/* Only the entry's most common reading is accented — not the whole line. */
+.kanji-readings .yomi.primary { color: var(--kanji); }
+.kanji-readings .yomi-sep { color: var(--ink-subtle, #94a3b8); font-weight: 400; }
+
+/* vocab header */
+.vocab-reading {
+  font-family: var(--jp);
+  font-size: 42px;
+  font-weight: 600;
+  color: var(--vocab);
+  line-height: 1.2;
+  word-break: break-word;
+  margin-bottom: 20px;
+}
+.vocab-cols { display: flex; gap: 40px; flex-wrap: wrap; }
+.vocab-cols > div { min-width: 0; }
+.meaning-val { font-size: 20px; font-weight: 700; color: var(--text); }
+.kanji-val {
+  font-family: var(--jp);
+  font-size: 30px;
+  font-weight: 500;
+  color: var(--vocab);
+  word-break: break-word;
+  line-height: 1.9;
+}
+.kanji-val rt { color: var(--text-subtle); }
+
+/* jukugo */
+.juku-row {
+  display: grid;
+  grid-template-columns: minmax(70px, 0.9fr) minmax(60px, 0.9fr) 1.4fr;
+  gap: 14px;
+  align-items: baseline;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: 0;
+  padding: 11px 0;
+  cursor: pointer;
+  font-family: inherit;
+}
+.juku-row:hover .juku-word { color: var(--oxford); }
+.juku-word {
+  font-family: var(--jp);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.juku-read { font-family: var(--jp); font-size: 13px; color: var(--text-subtle); }
+.juku-mean {
+  font-size: 13.5px;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* furigana */
+ruby { ruby-position: over; -webkit-ruby-position: before; }
+rt {
+  font-family: var(--jp);
+  font-size: 0.48em;
+  font-weight: 400;
+  color: var(--text-subtle);
+  letter-spacing: 0;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* example */
+.ex-jp { font-family: var(--jp); font-size: 19px; color: var(--text); line-height: 2.1; }
+.ex-en { font-size: 15px; color: var(--text-muted); margin-top: 8px; }
+
+/* conjugations */
+.conj-row {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-soft);
+}
+.conj-row:last-child { border-bottom: 0; }
+.conj-name { flex: 1; min-width: 0; }
+.conj-name b { display: block; font-size: 15px; font-weight: 600; color: var(--text); }
+.conj-name span { font-size: 12px; color: var(--text-subtle); }
+.conj-val {
+  font-family: var(--jp);
+  font-size: 17px;
+  color: var(--text);
+  text-align: right;
+  word-break: break-word;
+}
+
+.detail-empty {
+  background: var(--surface);
+  border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow);
+  padding: 72px 28px;
+  text-align: center;
+  color: var(--text-subtle);
+}
+.detail-empty .glyph {
+  font-family: var(--jp);
+  font-size: 48px;
+  color: var(--border);
+  display: block;
+  margin-bottom: 16px;
+}
+.detail-empty p { font-size: 14px; }
+
+.sheet-head { display: none; }
+
+.dict-loading {
+  max-width: 1080px;
+  margin: 80px auto;
+  text-align: center;
+  color: var(--text-subtle);
+  font-size: 14px;
+}
+
+/* MOBILE — detail becomes a bottom sheet, as in the app =================== */
+@media (max-width: 900px) {
+  /* The sticky bar has to earn its height on a phone: one scrolling row of
+     tabs instead of two wrapped rows, and tighter padding throughout. */
+  .dict-bar .wrap { padding: 10px 20px 0; }
+  .facet-band .wrap { padding: 9px 20px; }
+  .chips { padding: 9px 20px; }
+  .dict-main { grid-template-columns: 1fr; padding: 4px 20px 60px; gap: 0; }
+
+  #q {
+    font-size: 16px;            /* below 16px iOS zooms the page on focus */
+    padding: 11px 42px 11px 18px;
+  }
+  .dict-clear { right: 8px; font-size: 20px; }
+
+  .facet-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 6px;
+    padding: 10px 0;
+    scrollbar-width: none;
+  }
+  .facet-tabs::-webkit-scrollbar { display: none; }
+
+  .pill { font-size: 13px; padding: 7px 14px; }
+  .chip, .chip-clear { font-size: 12px; padding: 5px 11px; }
+  .kana, .rad-cell { height: 40px; }
+
+  .row { grid-template-columns: minmax(62px, 0.9fr) minmax(56px, 0.8fr) 1.3fr; gap: 10px; padding: 14px 18px; }
+  .detail { margin-top: 0; }
+  .pager { gap: 3px; }
+  .pager-num, .pager-step { min-width: 32px; height: 32px; padding: 0 6px; font-size: 13px; }
+
+  /* Narrow screens swap the page instead of overlaying a sheet: the list is
+     replaced by the entry, with a back link above it. No fixed overlay, no
+     transform, no z-index — which also avoids Safari leaving a stale layer
+     painted when a fixed element is hidden. */
+  .dict-main[data-mode="idle"] .detail,
+  .dict-main[data-mode="browsing"] .detail { display: none; }
+  .dict-main[data-mode="browsing"] .stroke-stage { display: none; }
+  .dict-main[data-mode="idle"] .stroke-stage {
+    min-height: max(260px, calc(100vh - var(--sticky-top, 200px) - 40px));
+  }
+
+  .dict-main[data-mode="entry"] .results-col { display: none; }
+
+  .detail {
+    position: static;
+    inset: auto;
+    transform: none;
+    margin-top: 0;
+    z-index: auto;
+    background: none;
+  }
+  .dict-main[data-mode="entry"] .detail { display: block; }
+
+  .dict-main[data-mode="entry"] .sheet-head {
+    display: flex;
+    justify-content: flex-start;
+    padding: 4px 0 12px;
+    background: none;
+  }
+  .sheet-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--oxford);
+    background: none;
+    border: 0;
+    padding: 6px 8px 6px 0;
+    margin: 0;
+    cursor: pointer;
+  }
+  .sheet-back svg {
+    width: 17px;
+    height: 17px;
+    stroke: currentColor;
+    stroke-width: 2.4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    fill: none;
+  }
+  .sheet-back:active { opacity: 0.6; }
+
+  .detail-scroll {
+    max-height: none;
+    overflow: visible;
+    padding: 0;
+    margin: 0;
+  }
+
+  .kanji-glyph { font-size: 74px; }
+  .kanji-head { gap: 20px; }
+  .vocab-reading { font-size: 36px; }
+  .vocab-cols { gap: 28px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stroke-holder { transition: none; }
+}

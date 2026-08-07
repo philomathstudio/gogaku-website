@@ -50,12 +50,68 @@ body {
 
 /* NAV =================================================================== */
 nav {
+  position: sticky;
+  top: 0;
+  z-index: 40;
   background: var(--bg);
   border-bottom: 1px solid var(--border);
   padding: 16px 32px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+/* SCROLL PROGRESS ======================================================= */
+/* Pinned directly under whatever sticks above it. The negative margin keeps
+   it out of the flow, so adding it does not shift any page's layout. */
+.scroll-progress {
+  position: sticky;
+  top: var(--progress-top, 0px);
+  z-index: 39;
+  height: 6px;
+  margin-bottom: -6px;
+  background: transparent;
+  transition: opacity 0.2s;
+}
+.scroll-progress-fill {
+  height: 100%;
+  width: 0;
+  background: var(--primary);
+  border-radius: 0 3px 3px 0;
+}
+
+/* BACK TO TOP =========================================================== */
+.to-top {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 70;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(41, 74, 120, 0.28);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(8px);
+  transition: opacity 0.18s, transform 0.18s, visibility 0.18s, background 0.15s;
+}
+.to-top.visible { opacity: 1; visibility: visible; transform: translateY(0); }
+.to-top:hover { background: var(--primary-hover); }
+.to-top svg {
+  width: 19px;
+  height: 19px;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
 }
 nav .brand {
   display: flex;
@@ -460,7 +516,7 @@ section.bg-white { background: var(--surface); }
 /* FOOTER ================================================================ */
 footer {
   background: var(--bg);
-  padding: 56px 32px 32px;
+  padding: 32px 32px 26px;
   border-top: 1px solid var(--border);
 }
 .footer-inner {
@@ -468,9 +524,9 @@ footer {
   margin: 0 auto;
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   flex-wrap: wrap;
-  gap: 32px;
+  gap: 20px 32px;
 }
 .footer-brand {
   display: flex;
@@ -479,11 +535,11 @@ footer {
   gap: 8px;
 }
 .footer-brand img {
-  height: 26px;
+  height: 24px;
   width: auto;
   flex: none;
   object-fit: contain;
-  margin-bottom: 4px;
+  margin-bottom: 0;
 }
 .footer-brand .tagline {
   font-size: 12px;
@@ -503,11 +559,10 @@ footer {
   transition: color 0.15s;
 }
 .footer-links a:hover { color: var(--primary); }
+/* No second rule — the footer's own top border is the only divider. */
 .footer-bottom {
   max-width: 1080px;
-  margin: 40px auto 0;
-  padding-top: 24px;
-  border-top: 1px solid var(--border);
+  margin: 22px auto 0;
   font-size: 12px;
   color: var(--text-subtle);
   text-align: center;
@@ -515,17 +570,18 @@ footer {
 
 /* RESPONSIVE ============================================================ */
 @media (max-width: 640px) {
-  nav { padding: 20px; }
+  nav { padding: 12px 20px; }
   nav .nav-links { gap: 16px; font-size: 13px; }
-  nav .brand img { height: 42px; }
+  nav .brand img { height: 36px; }
   .hero { padding: 70px 20px 80px; }
   .hero.compact { padding: 50px 20px 50px; }
   .hero .lede { font-size: 16px; }
   section { padding: 70px 20px; }
   .prose { padding: 60px 20px 80px; }
   .download-section { padding: 70px 20px; }
-  footer { padding: 40px 20px 24px; }
-  .footer-inner { flex-direction: column; gap: 20px; }
+  footer { padding: 26px 20px 22px; }
+  .to-top { right: 16px; bottom: 16px; width: 40px; height: 40px; }
+  .footer-inner { flex-direction: column; align-items: flex-start; gap: 14px; }
 }
 /* ACCESSIBILITY & POLISH ================================================ */
 a:focus-visible,
@@ -537,7 +593,7 @@ button:focus-visible {
 
 img { max-width: 100%; }
 
-.footer-bottom { line-height: 1.7; }
+.footer-bottom { line-height: 1.6; }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
@@ -549,4 +605,6 @@ img { max-width: 100%; }
   .btn-primary:hover,
   .feature:hover,
   .appstore-badge:hover { transform: none; }
+  .to-top { transition: opacity 0.01ms, visibility 0.01ms; transform: none; }
+  .to-top.visible { transform: none; }
 }

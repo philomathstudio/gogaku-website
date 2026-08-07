@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dictionary — Gogaku</title>
+<meta name="description" content="Search Gogaku's Japanese dictionary — over 10,000 words and kanji with readings, meanings, JLPT levels, radicals, conjugation tables and example sentences.">
+<link rel="icon" type="image/png" href="assets/gogaku-favicon.png">
+<link rel="apple-touch-icon" sizes="180x180" href="assets/gogaku-favicon.png">
+<meta name="apple-mobile-web-app-title" content="Gogaku">
+<meta property="og:title" content="Dictionary — Gogaku">
+<meta property="og:description" content="Over 10,000 Japanese words and kanji with readings, meanings, JLPT levels and conjugations.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://gogakuapp.com/dictionary.html">
+<meta property="og:image" content="https://gogakuapp.com/assets/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="dictionary.css">
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="brand">
+    <img src="assets/gogaku-lockup-trademark.png" alt="Gogaku">
+  </a>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="about.html">About</a>
+    <a href="dictionary.html" class="active">Dictionary</a>
+    <a href="index.html#download">Download</a>
+  </div>
+</nav>
+
+<h1 class="sr-only">Gogaku Japanese dictionary</h1>
+
+<div class="dict-bar">
+  <div class="wrap">
+    <div class="dict-field">
+      <input id="q" type="search" autocomplete="off" spellcheck="false"
+             placeholder="Romaji, kana, kanji, or English…" aria-label="Search the dictionary">
+      <button class="dict-clear" id="clear" aria-label="Clear search">&times;</button>
+    </div>
+    <div class="facet-tabs" id="tabs" role="tablist"></div>
+  </div>
+  <div class="facet-band" id="band" hidden>
+    <div class="wrap" id="band-body"></div>
+  </div>
+  <div class="chips" id="chips" hidden></div>
+</div>
+
+<p class="dict-loading" id="loading">Loading the dictionary…</p>
+
+<main class="dict-main" id="shell" data-mode="idle" hidden>
+  <section class="results-col" id="results-col">
+    <p class="dict-count" id="count"></p>
+    <div class="results" id="results"></div>
+    <nav class="pager" id="pager" aria-label="Results pages"></nav>
+  </section>
+
+  <div class="stroke-stage" id="stroke-stage" aria-hidden="true">
+    <div class="stroke-holder" id="stroke-holder"></div>
+  </div>
+
+  <aside class="detail" id="detail" aria-live="polite">
+    <div class="sheet-head">
+      <button class="sheet-back" id="sheet-close">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+        <span>Results</span>
+      </button>
+    </div>
+    <div class="detail-scroll" id="detail-scroll"></div>
+  </aside>
+</main>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <img src="assets/gogaku-wordmark-trademark.png" alt="Gogaku">
+    </div>
+    <div class="footer-links">
+      <a href="about.html">About</a>
+      <a href="dictionary.html">Dictionary</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="terms.html">Terms</a>
+      <a href="mailto:support@gogakuapp.com">Support</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    Gogaku is a product of Philomath Tech LLC, Austin, Texas.<br>
+    © 2026 Philomath Tech LLC. All rights reserved.
+  </div>
+</footer>
+
+<script>
+(function () {
+  'use strict';
+
+  var DATA = 'data/';
+  var PAGE = 25;
+
+  /* Mirrors the app's theme.js palette. */
+  var TONE = {
+    tab:      '#2e5fa0',   /* primary — Royal Oxford, the facet tabs */
+    type:     '#4a85d4',   /* vocabAccent */
+    kanji:    '#d04f12',   /* kanjiAccent */
+    jlpt:     '#138a73',   /* badgeSolidJLPT */
+    pos:      '#2e5fa0',   /* primary */
+    radical:  '#d04f12',   /* kanjiAccent */
+    category: '#d05a85'    /* pink */
+  };
+  var TYPE_LABEL = { v: 'Vocabulary', k: 'Kanji', g: 'Grammar' };
+
+  /* index columns */
+  var ID = 0, WORD = 1, READ = 2, MEAN = 3, TYPE = 4, POS = 5,
+      JLPT = 6, CAT = 7, RAD = 8, RADPOS = 9, MEANLC = 10, ROMAJI = 11;
+
+  var VERB_LABELS = [
+    ['polite',        'Polite',                'do / will do (polite)'],
+    ['plain',         'Plain',                 'do / will do'],
+    ['politeNeg',     'Polite negative',       "don't / won't (polite)"],
+    ['plainNeg',      'Plain negative',        "don't / won't"],
+    ['politePast',    'Polite past',           'did (polite)'],
+    ['plainPast',     'Plain past',            'did'],
+    ['politePastNeg', 'Polite past negative',  "didn't (polite)"],
+    ['pastNeg',       'Plain past negative',   "didn't"],
+    ['te',            'Te form',               'and / please'],
+    ['tai',           'Tai form',              'want to'],
+    ['volPolite',     'Polite volitional',     "let's / shall (polite)"],
+    ['vol',           'Plain volitional',      "let's / shall"],
+    ['pot',           'Potential',             'can / able to'],
+    ['imp',           'Imperative',            'command'],
+    ['cond',          'Conditional',           'if / when'],
+    ['adv',           'Adverbial',             'as an adverb']
+  ];
+
+  var ADJ_LABELS = [
+    ['polite',        'Polite',                'is (polite)'],
+    ['plain',         'Plain',                 'is'],
+    ['politeNeg',     'Polite negative',       'is not (polite)'],
+    ['plainNeg',      'Plain negative',        'is not'],
+    ['politePast',    'Polite past',           'was (polite)'],
+    ['plainPast',     'Plain past',            'was'],
+    ['politePastNeg', 'Polite past negative',  'was not (polite)'],
+    ['pastNeg',       'Plain past negative',   'was not'],
+    ['te',            'Te form',               'and / linking'],
+    ['cond',          'Conditional',           'if / when'],
+    ['adv',           'Adverbial',             'as an adverb'],
+    ['volPolite',     'Polite volitional',     'probably (polite)'],
+    ['vol',           'Plain volitional',      'probably'],
+    ['tai',           'Tai form',              'want to'],
+    ['pot',           'Potential',             'can / able to'],
+    ['imp',           'Imperative',            'command']
+  ];
+
+  var entries = [], byId = {}, kanjiByChar = {}, details = null, meta = null;
+  var view = [], page = 0, selected = null, activeTab = '';
+  var pushedEntries = 0;   // how many entry states we have pushed onto history
+  var queryFromStroke = false;   // search box was filled by tapping the animation
+
+  var state = { q: '', type: '', jlpt: '', pos: '', radical: '', radPos: '', category: '' };
+
+  var el = {};
+  ['q','clear','tabs','band','band-body','chips','results','count','detail',
+   'detail-scroll','sheet-close','shell','loading','pager','results-col',
+   'stroke-stage','stroke-holder'].forEach(function (id) {
+    el[id.replace(/-(\w)/g, function (m, c) { return c.toUpperCase(); })] =
+      document.getElementById(id);
+  });
+  el.bar = document.querySelector('.dict-bar');
+
+  /* ---------- romaji ------------------------------------------------- */
+
+  var KANA_MAP = {
+    'あ':'a','い':'i','う':'u','え':'e','お':'o',
+    'か':'ka','き':'ki','く':'ku','け':'ke','こ':'ko',
+    'が':'ga','ぎ':'gi','ぐ':'gu','げ':'ge','ご':'go',
+    'さ':'sa','し':'shi','す':'su','せ':'se','そ':'so',
+    'ざ':'za','じ':'ji','ず':'zu','ぜ':'ze','ぞ':'zo',
+    'た':'ta','ち':'chi','つ':'tsu','て':'te','と':'to',
+    'だ':'da','ぢ':'ji','づ':'zu','で':'de','ど':'do',
+    'な':'na','に':'ni','ぬ':'nu','ね':'ne','の':'no',
+    'は':'ha','ひ':'hi','ふ':'fu','へ':'he','ほ':'ho',
+    'ば':'ba','び':'bi','ぶ':'bu','べ':'be','ぼ':'bo',
+    'ぱ':'pa','ぴ':'pi','ぷ':'pu','ぺ':'pe','ぽ':'po',
+    'ま':'ma','み':'mi','む':'mu','め':'me','も':'mo',
+    'や':'ya','ゆ':'yu','よ':'yo',
+    'ら':'ra','り':'ri','る':'ru','れ':'re','ろ':'ro',
+    'わ':'wa','ゐ':'i','ゑ':'e','を':'o','ん':'n',
+    'ゃ':'ya','ゅ':'yu','ょ':'yo','ぁ':'a','ぃ':'i','ぅ':'u','ぇ':'e','ぉ':'o'
+  };
+  var DIGRAPH = {
+    'きゃ':'kya','きゅ':'kyu','きょ':'kyo','しゃ':'sha','しゅ':'shu','しょ':'sho',
+    'ちゃ':'cha','ちゅ':'chu','ちょ':'cho','にゃ':'nya','にゅ':'nyu','にょ':'nyo',
+    'ひゃ':'hya','ひゅ':'hyu','ひょ':'hyo','みゃ':'mya','みゅ':'myu','みょ':'myo',
+    'りゃ':'rya','りゅ':'ryu','りょ':'ryo','ぎゃ':'gya','ぎゅ':'gyu','ぎょ':'gyo',
+    'じゃ':'ja','じゅ':'ju','じょ':'jo','びゃ':'bya','びゅ':'byu','びょ':'byo',
+    'ぴゃ':'pya','ぴゅ':'pyu','ぴょ':'pyo'
+  };
+
+  function toHiragana(text) {
+    return String(text || '').replace(/[\u30a1-\u30f6]/g, function (ch) {
+      return String.fromCharCode(ch.charCodeAt(0) - 0x60);
+    });
+  }
+
+  function toRomaji(kana) {
+    var src = toHiragana(kana), out = '', i = 0;
+    while (i < src.length) {
+      var pair = src.substr(i, 2);
+      if (DIGRAPH[pair]) { out += DIGRAPH[pair]; i += 2; continue; }
+      var ch = src.charAt(i);
+      if (ch === 'っ') {
+        var nxt = DIGRAPH[src.substr(i + 1, 2)] || KANA_MAP[src.charAt(i + 1)] || '';
+        if (nxt) { out += nxt.charAt(0); }
+        i += 1; continue;
+      }
+      if (ch === 'ー') { i += 1; continue; }
+      out += KANA_MAP[ch] || ch;
+      i += 1;
+    }
+    return out;
+  }
+
+  function ruby(segments, fallback) {
+    if (!segments || !segments.length) { return esc(fallback || ''); }
+    var html = '';
+    for (var i = 0; i < segments.length; i++) {
+      var text = esc(segments[i][0]);
+      html += segments[i][1]
+        ? '<ruby>' + text + '<rt>' + esc(segments[i][1]) + '</rt></ruby>'
+        : text;
+    }
+    return html;
+  }
+
+  /* The kanji entry's own `reading` is its most common reading. Whichever of
+     on'yomi / kun'yomi contains it gets the accent colour — it is not always
+     kun'yomi. Falls back to a longest-prefix match, then to neither. */
+  function readingList(value) {
+    var out = [];
+    var raw = String(value || '').replace(/\u3001/g, ',').split(',');
+    for (var i = 0; i < raw.length; i++) {
+      var text = raw[i].trim();
+      if (text) { out.push(text); }
+    }
+    return out;
+  }
+
+  /* Returns which group holds the entry's own reading, and which single item
+     inside that group it is — so only that one reading gets the accent. */
+  function primaryReading(reading, on, kun) {
+    var target = toHiragana(String(reading || '').trim());
+    if (!target) { return null; }
+
+    var groups = [['on', readingList(on)], ['kun', readingList(kun)]];
+    var g, items, i;
+
+    for (g = 0; g < groups.length; g++) {
+      items = groups[g][1];
+      for (i = 0; i < items.length; i++) {
+        if (toHiragana(items[i]) === target) {
+          return { group: groups[g][0], item: items[i] };
+        }
+      }
+    }
+
+    var best = null, bestLen = 0;
+    for (g = 0; g < groups.length; g++) {
+      items = groups[g][1];
+      for (i = 0; i < items.length; i++) {
+        var hira = toHiragana(items[i]);
+        if (hira && target.indexOf(hira) === 0 && hira.length > bestLen) {
+          best = { group: groups[g][0], item: items[i] };
+          bestLen = hira.length;
+        }
+      }
+    }
+    return best;
+  }
+
+  /* Renders a comma-separated reading list, accenting only the matching item. */
+  function readingHtml(value, accentItem) {
+    var items = readingList(value);
+    var out = [];
+    for (var i = 0; i < items.length; i++) {
+      var hit = accentItem !== null && items[i] === accentItem;
+      out.push('<span class="yomi' + (hit ? ' primary' : '') + '">' +
+               esc(items[i]) + '</span>');
+    }
+    return out.join('<span class="yomi-sep">, </span>');
+  }
+
+  function esc(text) {
+    return String(text)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  /* ---------- which filters apply ------------------------------------ */
+
+  function visibleTabs() {
+    var tabs = [['type', 'Type'], ['jlpt', 'JLPT']];
+    if (state.type !== 'k') { tabs.push(['pos', 'Part of Speech']); }
+    if (state.type !== 'v') { tabs.push(['radical', 'Radical']); }
+    tabs.push(['category', 'Category']);
+    return tabs;
+  }
+
+  function pruneFilters() {
+    if (state.type === 'k') { state.pos = ''; }
+    if (state.type === 'v') { state.radical = ''; state.radPos = ''; }
+    var names = visibleTabs().map(function (t) { return t[0]; });
+    if (activeTab && names.indexOf(activeTab) === -1) { activeTab = ''; }
+  }
+
+  /* ---------- filter UI ---------------------------------------------- */
+
+  function renderTabs() {
+    var html = '';
+    visibleTabs().forEach(function (tab) {
+      html += '<button class="pill" type="button" role="tab" data-tab="' + tab[0] + '"' +
+              ' style="--tint:' + TONE.tab + '"' +
+              ' aria-selected="' + (activeTab === tab[0] ? 'true' : 'false') + '">' +
+              tab[1] + '</button>';
+    });
+    el.tabs.innerHTML = html;
+    Array.prototype.forEach.call(el.tabs.querySelectorAll('.pill'), function (b) {
+      b.addEventListener('click', function () {
+        var name = b.getAttribute('data-tab');
+        activeTab = (activeTab === name) ? '' : name;
+        renderTabs();
+        renderBand();
+        measureSticky();
+      });
+    });
+  }
+
+  function optionPill(key, value, label, tint) {
+    var on = state[key] === value;
+    return '<button class="pill" type="button" data-key="' + key + '"' +
+           ' data-value="' + esc(value) + '" style="--tint:' + tint + '"' +
+           ' aria-pressed="' + (on ? 'true' : 'false') + '">' + esc(label) + '</button>';
+  }
+
+  function renderBand() {
+    if (!activeTab) { el.band.hidden = true; return; }
+    el.band.hidden = false;
+    var html = '', i;
+
+    if (activeTab === 'type') {
+      html = '<div class="facet-scroll">' +
+             optionPill('type', 'v', 'Vocabulary', TONE.type) +
+             optionPill('type', 'k', 'Kanji', TONE.kanji) +
+             '</div>';
+    } else if (activeTab === 'jlpt') {
+      html = '<div class="facet-scroll">';
+      for (i = 0; i < meta.jlpt.length; i++) {
+        html += optionPill('jlpt', meta.jlpt[i], meta.jlpt[i], TONE.jlpt);
+      }
+      html += '</div>';
+    } else if (activeTab === 'pos') {
+      html = '<div class="facet-scroll">';
+      for (i = 0; i < meta.partsOfSpeech.length; i++) {
+        html += optionPill('pos', meta.partsOfSpeech[i], meta.partsOfSpeech[i], TONE.pos);
+      }
+      html += '</div>';
+    } else if (activeTab === 'category') {
+      html = '<div class="facet-scroll">';
+      for (i = 0; i < meta.categories.length; i++) {
+        html += optionPill('category', meta.categories[i], meta.categories[i], TONE.category);
+      }
+      html += '</div>';
+    } else if (activeTab === 'radical') {
+      html = '<div class="facet-scroll">' +
+             optionPill('radPos', '', 'All', TONE.radical);
+      for (i = 0; i < meta.radicalPositions.length; i++) {
+        html += optionPill('radPos', meta.radicalPositions[i],
+                           meta.radicalPositions[i], TONE.radical);
+      }
+      html += '</div><div class="rad-grid">';
+      for (i = 0; i < meta.radicals.length; i++) {
+        var rad = meta.radicals[i];
+        if (state.radPos && !radicalHasPosition(rad.char, state.radPos)) { continue; }
+        html += '<button class="rad-cell" type="button" data-key="radical"' +
+                ' data-value="' + esc(rad.char) + '"' +
+                ' title="' + esc(rad.gloss || rad.char) + '"' +
+                ' aria-pressed="' + (state.radical === rad.char ? 'true' : 'false') + '">' +
+                esc(rad.char) + '</button>';
+      }
+      html += '</div>';
+    }
+
+    el.bandBody.innerHTML = html;
+    Array.prototype.forEach.call(
+      el.bandBody.querySelectorAll('[data-key]'), function (btn) {
+        btn.addEventListener('click', function () {
+          var key = btn.getAttribute('data-key');
+          var value = btn.getAttribute('data-value');
+          state[key] = (state[key] === value) ? '' : value;
+          if (key === 'type') { pruneFilters(); renderTabs(); }
+          renderBand();
+          renderChips();
+          compute();
+          measureSticky();
+        });
+      });
+  }
+
+  var radPosCache = null;
+  function radicalHasPosition(char, position) {
+    if (!radPosCache) {
+      radPosCache = {};
+      for (var i = 0; i < entries.length; i++) {
+        var e = entries[i];
+        if (e[TYPE] !== 'k' || !e[RAD]) { continue; }
+        (radPosCache[e[RAD]] = radPosCache[e[RAD]] || {})[e[RADPOS] || ''] = true;
+      }
+    }
+    return !!(radPosCache[char] && radPosCache[char][position]);
+  }
+
+  function radicalGloss(char) {
+    for (var i = 0; i < meta.radicals.length; i++) {
+      if (meta.radicals[i].char === char) { return meta.radicals[i].gloss; }
+    }
+    return '';
+  }
+
+  function renderChips() {
+    var items = [];
+    if (state.type) {
+      items.push(['type', TYPE_LABEL[state.type].toLowerCase(),
+                  state.type === 'k' ? TONE.kanji : TONE.type]);
+    }
+    if (state.jlpt) { items.push(['jlpt', state.jlpt, TONE.jlpt]); }
+    if (state.pos) { items.push(['pos', state.pos, TONE.pos]); }
+    if (state.radical) {
+      var gloss = radicalGloss(state.radical);
+      items.push(['radical', state.radical + (gloss ? ' \u00b7 ' + gloss : ''), TONE.radical]);
+    }
+    if (state.radPos) { items.push(['radPos', state.radPos, TONE.radical]); }
+    if (state.category) { items.push(['category', state.category, TONE.category]); }
+
+    if (!items.length) { el.chips.hidden = true; el.chips.innerHTML = ''; return; }
+    el.chips.hidden = false;
+
+    var html = '';
+    items.forEach(function (item) {
+      html += '<button class="chip" type="button" data-key="' + item[0] + '"' +
+              ' style="--tint:' + item[2] + '">' + esc(item[1]) +
+              '<span class="x">&times;</span></button>';
+    });
+    html += '<button class="chip-clear" type="button" id="clear-all">Clear all</button>';
+    el.chips.innerHTML = html;
+
+    Array.prototype.forEach.call(el.chips.querySelectorAll('.chip'), function (chip) {
+      chip.addEventListener('click', function () {
+        state[chip.getAttribute('data-key')] = '';
+        pruneFilters(); renderTabs(); renderBand(); renderChips(); compute(); measureSticky();
+      });
+    });
+    document.getElementById('clear-all').addEventListener('click', function () {
+      state.type = state.jlpt = state.pos = state.radical = state.radPos = state.category = '';
+      pruneFilters(); renderTabs(); renderBand(); renderChips(); compute(); measureSticky();
+    });
+  }
+
+  /* ---------- search -------------------------------------------------- */
+
+  function score(entry, query) {
+    var word = entry[WORD], read = entry[READ], mean = entry[MEANLC], roma = entry[ROMAJI];
+    if (word === query || read === query) { return 0; }
+    if (mean === query) { return 1; }
+    if (roma === query) { return 2; }
+    if (word.indexOf(query) === 0 || read.indexOf(query) === 0) { return 3; }
+    if (roma.indexOf(query) === 0) { return 4; }
+    if (mean.indexOf(query) === 0) { return 5; }
+    if (mean.indexOf(', ' + query) !== -1) { return 6; }
+    if (word.indexOf(query) !== -1 || read.indexOf(query) !== -1) { return 7; }
+    if (mean.indexOf(query) !== -1) { return 8; }
+    if (roma.indexOf(query) !== -1) { return 9; }
+    return -1;
+  }
+
+  function compute() {
+    var query = state.q.trim().toLowerCase();
+    var kanaQuery = toHiragana(query);
+    var out = [];
+
+    for (var i = 0; i < entries.length; i++) {
+      var e = entries[i];
+      if (state.type && e[TYPE] !== state.type) { continue; }
+      if (state.jlpt && e[JLPT] !== state.jlpt) { continue; }
+      if (state.pos && e[POS] !== state.pos) { continue; }
+      if (state.category && e[CAT] !== state.category) { continue; }
+      if (state.radical && (e[TYPE] !== 'k' || e[RAD] !== state.radical)) { continue; }
+      if (state.radPos && (e[TYPE] !== 'k' || e[RADPOS] !== state.radPos)) { continue; }
+
+      if (!query) { out.push([e, 5]); continue; }
+      var rank = score(e, query);
+      if (rank === -1 && kanaQuery !== query) { rank = score(e, kanaQuery); }
+      if (rank !== -1) { out.push([e, rank]); }
+    }
+
+    out.sort(function (a, b) {
+      if (a[1] !== b[1]) { return a[1] - b[1]; }
+      return a[0][WORD].length - b[0][WORD].length;
+    });
+
+    view = out.map(function (pair) { return pair[0]; });
+    page = 0;
+    el.count.innerHTML = view.length
+      ? '<b>' + view.length.toLocaleString() + '</b> ' + (view.length === 1 ? 'entry' : 'entries')
+      : '';
+
+    if (setMode() === 'idle') {
+      el.results.textContent = '';
+      el.pager.innerHTML = '';
+      return;
+    }
+    renderPage();
+  }
+
+  function pageCount() {
+    return Math.max(1, Math.ceil(view.length / PAGE));
+  }
+
+  function goToPage(n, keepScroll) {
+    page = Math.min(Math.max(0, n), pageCount() - 1);
+    renderPage();
+    if (!keepScroll && el.resultsCol) {
+      var top = el.resultsCol.getBoundingClientRect().top + window.pageYOffset;
+      var offset = parseInt(getComputedStyle(document.documentElement)
+                     .getPropertyValue('--sticky-top'), 10) || 200;
+      window.scrollTo({ top: Math.max(0, top - offset), behavior: 'smooth' });
+    }
+  }
+
+  function renderPage() {
+    el.results.textContent = '';
+
+    if (!view.length) {
+      el.results.innerHTML =
+        '<div class="dict-empty"><span class="glyph">空</span>' +
+        '<p>Nothing matched. Try a different spelling, or clear the filters.</p></div>';
+      el.pager.innerHTML = '';
+      return;
+    }
+
+    var frag = document.createDocumentFragment();
+    var start = page * PAGE;
+    var end = Math.min(start + PAGE, view.length);
+    for (var i = start; i < end; i++) { frag.appendChild(makeRow(view[i])); }
+    el.results.appendChild(frag);
+
+    renderPager();
+  }
+
+  /* First, last, and a window around the current page — ellipses between. */
+  function pageNumbers(current, total) {
+    if (total <= 7) {
+      var all = [];
+      for (var i = 0; i < total; i++) { all.push(i); }
+      return all;
+    }
+    var out = [0];
+    var from = Math.max(1, current - 1);
+    var to = Math.min(total - 2, current + 1);
+    if (from > 1) { out.push('gap'); }
+    for (var j = from; j <= to; j++) { out.push(j); }
+    if (to < total - 2) { out.push('gap'); }
+    out.push(total - 1);
+    return out;
+  }
+
+  function renderPager() {
+    var total = pageCount();
+    if (total < 2) { el.pager.innerHTML = ''; return; }
+
+    var html = '<button class="pager-step" type="button" data-go="' + (page - 1) + '"' +
+               (page === 0 ? ' disabled' : '') + ' aria-label="Previous page">' +
+               '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>' +
+               '</button>';
+
+    var items = pageNumbers(page, total);
+    for (var i = 0; i < items.length; i++) {
+      if (items[i] === 'gap') { html += '<span class="pager-gap">…</span>'; continue; }
+      html += '<button class="pager-num" type="button" data-go="' + items[i] + '"' +
+              (items[i] === page ? ' aria-current="page"' : '') + '>' +
+              (items[i] + 1) + '</button>';
+    }
+
+    html += '<button class="pager-step" type="button" data-go="' + (page + 1) + '"' +
+            (page === total - 1 ? ' disabled' : '') + ' aria-label="Next page">' +
+            '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>' +
+            '</button>';
+
+    el.pager.innerHTML = html;
+    Array.prototype.forEach.call(el.pager.querySelectorAll('[data-go]'), function (btn) {
+      btn.addEventListener('click', function () {
+        if (btn.disabled) { return; }
+        goToPage(parseInt(btn.getAttribute('data-go'), 10));
+      });
+    });
+  }
+
+  function makeRow(entry) {
+    var kanji = entry[TYPE] === 'k';
+    var row = document.createElement('button');
+    row.className = 'row';
+    row.type = 'button';
+    row.setAttribute('data-id', entry[ID]);
+    row.setAttribute('data-type', entry[TYPE]);
+    if (selected === entry[ID]) { row.setAttribute('aria-current', 'true'); }
+
+    var lead = document.createElement('span');
+    lead.className = 'row-lead';
+    lead.textContent = kanji ? entry[WORD] : (entry[READ] || entry[WORD]);
+
+    var alt = document.createElement('span');
+    alt.className = 'row-alt';
+    alt.textContent = kanji ? entry[READ] : (entry[WORD] !== entry[READ] ? entry[WORD] : '');
+
+    var mean = document.createElement('span');
+    mean.className = 'row-mean';
+    mean.textContent = entry[MEAN];
+
+    row.appendChild(lead);
+    row.appendChild(alt);
+    row.appendChild(mean);
+    row.addEventListener('click', function () { select(entry[ID], true); });
+    return row;
+  }
+
+  /* ---------- detail -------------------------------------------------- */
+
+  function select(id, pushHash) {
+    var entry = byId[id];
+    if (!entry) { return; }
+    selected = id;
+
+    var rows = el.results.querySelectorAll('.row');
+    for (var i = 0; i < rows.length; i++) {
+      if (rows[i].getAttribute('data-id') === id) { rows[i].setAttribute('aria-current', 'true'); }
+      else { rows[i].removeAttribute('aria-current'); }
+    }
+
+    var at = view.indexOf(entry);
+    if (at !== -1 && Math.floor(at / PAGE) !== page) {
+      goToPage(Math.floor(at / PAGE), true);
+    }
+
+    if (pushHash && history.pushState) {
+      history.pushState({ entry: id }, '', '#' + id);
+      pushedEntries += 1;
+    }
+
+    el.detailScroll.innerHTML = entry[TYPE] === 'k'
+      ? kanjiCards(entry, (details && details[id]) || {})
+      : vocabCards(entry, (details && details[id]) || {});
+
+    Array.prototype.forEach.call(
+      el.detailScroll.querySelectorAll('.juku-row'), function (jr) {
+        jr.addEventListener('click', function () { select(jr.getAttribute('data-id'), true); });
+      });
+
+    setMode();
+    el.detail.classList.add('open');
+    el.detailScroll.scrollTop = 0;
+
+    // Narrow screens replace the list with the entry — start at its top.
+    if (window.innerWidth <= 900) { window.scrollTo(0, 0); }
+  }
+
+  function headChips(entry, extra, includeRadical) {
+    var html = '<div class="head-chips">';
+    if (entry[JLPT]) { html += '<span class="head-chip hc-jlpt">' + esc(entry[JLPT]) + '</span>'; }
+    if (includeRadical && entry[RAD]) {
+      html += '<span class="head-chip hc-rad">' + esc(entry[RAD]) + '</span>';
+    }
+    if (!includeRadical && entry[POS]) {
+      html += '<span class="head-chip hc-pos">' + esc(entry[POS]) + '</span>';
+    }
+    if (entry[CAT]) { html += '<span class="head-chip hc-cat">' + esc(entry[CAT]) + '</span>'; }
+    return html + '</div>';
+  }
+
+  function kanjiCards(entry, extra) {
+    var html = '<div class="card">' + headChips(entry, extra, true);
+    html += '<div class="kanji-head"><div class="kanji-glyph">' + esc(entry[WORD]) + '</div>';
+    html += '<div class="kanji-readings">';
+    var primary = primaryReading(entry[READ], extra.on, extra.kun);
+    if (extra.on) {
+      html += '<div class="card-label">On\u2019yomi</div><div class="val">' +
+              readingHtml(extra.on, primary && primary.group === 'on' ? primary.item : null) +
+              '</div>';
+    }
+    if (extra.kun) {
+      html += '<div class="card-label">Kun\u2019yomi</div><div class="val">' +
+              readingHtml(extra.kun, primary && primary.group === 'kun' ? primary.item : null) +
+              '</div>';
+    }
+    if (!extra.on && !extra.kun && entry[READ]) {
+      html += '<div class="card-label">Reading</div><div class="val">' +
+              esc(entry[READ]) + '</div>';
+    }
+    html += '</div></div>';
+    html += '<div style="margin-top:22px"><div class="card-label">Meaning</div>' +
+            '<div class="meaning-val">' + esc(entry[MEAN]) + '</div></div>';
+    html += '</div>';
+
+    if (extra.note) {
+      html += '<div class="card"><div class="card-label">Note</div>' +
+              '<p class="ex-en" style="margin-top:0">' + esc(extra.note) + '</p></div>';
+    }
+
+    if (extra.juku && extra.juku.length) {
+      html += '<div class="card"><div class="card-label">Jukugo</div>';
+      for (var i = 0; i < extra.juku.length; i++) {
+        var v = byId[extra.juku[i]];
+        if (!v) { continue; }
+        html += '<button class="juku-row" type="button" data-id="' + esc(v[ID]) + '">' +
+                '<span class="juku-word">' + esc(v[WORD]) + '</span>' +
+                '<span class="juku-read">' + esc(v[READ]) + '</span>' +
+                '<span class="juku-mean">' + esc(v[MEAN]) + '</span></button>';
+      }
+      html += '</div>';
+    }
+    return html;
+  }
+
+  function vocabCards(entry, extra) {
+    var hasKanji = entry[WORD] && entry[WORD] !== entry[READ];
+    var html = '<div class="card">' + headChips(entry, extra, false);
+    html += '<div class="vocab-reading">' + esc(entry[READ] || entry[WORD]) + '</div>';
+    html += '<div class="vocab-cols"><div><div class="card-label">Meaning</div>' +
+            '<div class="meaning-val">' + esc(entry[MEAN]) + '</div></div>';
+    if (hasKanji) {
+      html += '<div><div class="card-label">Kanji</div>' +
+              '<div class="kanji-val">' + ruby(extra.ruby, entry[WORD]) + '</div></div>';
+    }
+    html += '</div></div>';
+
+    if (extra.note) {
+      html += '<div class="card"><div class="card-label">Note</div>' +
+              '<p class="ex-en" style="margin-top:0">' + esc(extra.note) + '</p></div>';
+    }
+
+    if (extra.exJp) {
+      html += '<div class="card"><div class="card-label">Example</div>' +
+              '<p class="ex-jp">' + ruby(extra.exRuby, extra.exJp) + '</p>';
+      if (extra.exEn) { html += '<p class="ex-en">' + esc(extra.exEn) + '</p>'; }
+      html += '</div>';
+    }
+
+    if (extra.conj) {
+      var labels = /adjective/i.test(entry[POS] || '') ? ADJ_LABELS : VERB_LABELS;
+      var rows = '';
+      for (var i = 0; i < labels.length; i++) {
+        var key = labels[i][0];
+        if (!extra.conj[key]) { continue; }
+        rows += '<div class="conj-row"><span class="conj-name"><b>' + labels[i][1] +
+                '</b><span>' + labels[i][2] + '</span></span>' +
+                '<span class="conj-val">' + esc(extra.conj[key]) + '</span></div>';
+      }
+      if (rows) {
+        html += '<div class="card"><div class="card-label">Conjugations</div>' + rows + '</div>';
+      }
+    }
+    return html;
+  }
+
+  /* Closing walks the history back so the browser's own Back button and the
+     Results button do the same thing. If we never pushed (someone landed on a
+     deep link), rewrite the URL instead of leaving the site. */
+  function closeDetail() {
+    if (pushedEntries > 0 && history.back) {
+      var wanted = selected;
+      history.back();
+      // If popstate never arrives, close anyway rather than stay stuck open.
+      setTimeout(function () {
+        if (wanted !== null && selected === wanted) {
+          pushedEntries = 0;
+          if (history.replaceState) {
+            history.replaceState(null, '', location.pathname + location.search);
+          }
+          clearEntry();
+        }
+      }, 250);
+      return;
+    }
+    if (history.replaceState) {
+      history.replaceState(null, '', location.pathname + location.search);
+    }
+    clearEntry();
+  }
+
+  function clearEntry() {
+    el.detail.classList.remove('open');
+    selected = null;
+    var rows = el.results.querySelectorAll('.row');
+    for (var i = 0; i < rows.length; i++) { rows[i].removeAttribute('aria-current'); }
+
+    // The animation put that word in the box, so take it back out and
+    // return to the idle state rather than stranding a search nobody typed.
+    if (queryFromStroke) {
+      queryFromStroke = false;
+      el.q.value = '';
+      state.q = '';
+      el.clear.className = 'dict-clear';
+      compute();
+      return;
+    }
+    setMode();
+  }
+
+  /* ---------- stroke-order idle animation ----------------------------- */
+
+  var STROKES = [26085, 26376, 28779, 27700, 26408, 37329, 22303, 23665, 24029, 33457, 31354, 28023, 38632, 38634, 39080, 20154, 29356, 29483, 39770, 40165, 39135, 39154, 34892, 35211, 32862, 26360, 35501, 35441, 26178, 20998, 26412, 35486, 23398, 22823, 23567, 20013, 19978, 19979, 24038, 21491, 25163, 36275, 30446, 21475, 32819, 22812, 26397, 26172];
+
+  var STROKE_STEP = 0.90;   // seconds between stroke starts
+  var STROKE_DUR  = 0.80;   // seconds to draw one stroke
+  var STROKE_HOLD = 1900;   // ms the finished character stays up
+  var STROKE_FADE = 600;    // ms of fade
+
+  var strokeCache = {};
+  var strokeTimer = null;
+  var strokeOrder = [];
+  var strokePos = 0;
+  var currentStroke = null;
+  var reduceMotion = window.matchMedia &&
+                     window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* Every start/stop bumps the generation. Async callbacks carry the
+     generation they began under and bail if it is no longer current, so
+     two loops can never run at once. */
+  var strokeRun = 0;
+  var strokeActive = false;
+  var strokeStartedAt = 0;
+  var strokeRuntime = 0;
+
+  function shuffleStrokes() {
+    strokeOrder = STROKES.slice();
+    for (var i = strokeOrder.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = strokeOrder[i];
+      strokeOrder[i] = strokeOrder[j];
+      strokeOrder[j] = tmp;
+    }
+    strokePos = 0;
+  }
+
+  /* animCJK ships one-second stroke spacing baked into each path. Rewrite it
+     so the cycle can be timed against the actual stroke count. */
+  function retime(svg) {
+    var paths = svg.querySelectorAll('path[clip-path]');
+    for (var i = 0; i < paths.length; i++) {
+      paths[i].style.setProperty('--t', STROKE_DUR + 's');
+      paths[i].style.setProperty('--d', (i * STROKE_STEP).toFixed(2) + 's');
+    }
+    if (!paths.length) { return 1200; }
+    return ((paths.length - 1) * STROKE_STEP + STROKE_DUR) * 1000;
+  }
+
+  function drawStroke(gen, code, markup) {
+    if (gen !== strokeRun || !markup) { return; }
+
+    var frame = document.createElement('div');
+    frame.innerHTML = markup;
+    var svg = frame.querySelector('svg');
+    if (!svg) { return; }
+    svg.removeAttribute('width');
+    svg.removeAttribute('height');
+
+    var runtime = retime(svg);
+    currentStroke = code;
+    strokeRuntime = runtime;
+    strokeStartedAt = Date.now();
+    el.strokeHolder.innerHTML = '';
+    el.strokeHolder.appendChild(svg);
+    el.strokeStage.setAttribute('title', 'Open ' + String.fromCharCode(code));
+
+    void el.strokeHolder.offsetWidth;          // force the fade-in to run
+    el.strokeStage.classList.remove('fading');
+
+    if (reduceMotion) { return; }
+
+    scheduleFade(gen, runtime + STROKE_HOLD);
+  }
+
+  function scheduleFade(gen, delay) {
+    strokeTimer = setTimeout(function () {
+      if (gen !== strokeRun) { return; }
+      el.strokeStage.classList.add('fading');
+      strokeTimer = setTimeout(function () { nextStroke(gen); }, STROKE_FADE);
+    }, Math.max(0, delay));
+  }
+
+  function nextStroke(gen) {
+    if (gen !== strokeRun) { return; }
+    if (!strokeOrder.length || strokePos >= strokeOrder.length) { shuffleStrokes(); }
+    var code = strokeOrder[strokePos++];
+    if (code === undefined) { return; }
+
+    if (strokeCache[code]) { drawStroke(gen, code, strokeCache[code]); return; }
+
+    fetch('assets/strokes/' + code + '.svg')
+      .then(function (r) { return r.ok ? r.text() : ''; })
+      .then(function (text) {
+        strokeCache[code] = text;
+        drawStroke(gen, code, text);
+      })
+      .catch(function () {
+        if (gen !== strokeRun) { return; }
+        strokeTimer = setTimeout(function () { nextStroke(gen); }, 500);
+      });
+  }
+
+  function startStrokes() {
+    if (strokeActive) { return; }
+    strokeActive = true;
+    strokeRun += 1;
+
+    // If a character is still on screen and hasn't had its full run,
+    // let it finish rather than snapping to a new one.
+    if (currentStroke !== null && !reduceMotion) {
+      var elapsed = Date.now() - strokeStartedAt;
+      var full = strokeRuntime + STROKE_HOLD;
+      if (elapsed < full) {
+        el.strokeStage.classList.remove('fading');
+        scheduleFade(strokeRun, full - elapsed);
+        return;
+      }
+      if (elapsed < full + STROKE_FADE) {
+        // Already fading — let the fade play out before the next character.
+        var gen = strokeRun;
+        el.strokeStage.classList.add('fading');
+        strokeTimer = setTimeout(function () { nextStroke(gen); },
+                                 full + STROKE_FADE - elapsed);
+        return;
+      }
+    }
+    nextStroke(strokeRun);
+  }
+
+  function stopStrokes() {
+    strokeRun += 1;
+    strokeActive = false;
+    clearTimeout(strokeTimer);
+    strokeTimer = null;
+  }
+
+  function filtersActive() {
+    return !!(state.type || state.jlpt || state.pos ||
+              state.radical || state.radPos || state.category);
+  }
+
+  /* Safari can leave a stale layer painted when a subtree is shown or hidden
+     around sticky elements, so the DOM is right but the pixels are not. Toggling
+     display and reading a layout property forces the region to be redrawn. */
+  function forceRepaint(node) {
+    if (!node) { return; }
+    var previous = node.style.display;
+    node.style.display = 'none';
+    void node.offsetHeight;
+    node.style.display = previous || '';
+    void node.offsetHeight;
+  }
+
+  var lastMode = null;
+
+  function setMode() {
+    var mode;
+    if (!state.q.trim() && !filtersActive()) { mode = 'idle'; }
+    else if (selected) { mode = 'entry'; }
+    else { mode = 'browsing'; }
+
+    el.shell.setAttribute('data-mode', mode);
+    if (mode === 'entry') { stopStrokes(); } else { startStrokes(); }
+
+    if (mode !== lastMode) {
+      lastMode = mode;
+      forceRepaint(el.detail);
+      forceRepaint(el.resultsCol);
+    }
+    return mode;
+  }
+
+  /* ---------- events -------------------------------------------------- */
+
+  var timer = null;
+  el.q.addEventListener('input', function () {
+    state.q = el.q.value;
+    queryFromStroke = false;
+    el.clear.className = 'dict-clear' + (el.q.value.length ? ' on' : '');
+    clearTimeout(timer);
+    timer = setTimeout(compute, 110);
+  });
+
+  el.q.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && view.length) { e.preventDefault(); select(view[0][ID], true); }
+    if (e.key === 'Escape') { resetQuery(); }
+  });
+
+  function resetQuery() {
+    el.q.value = ''; state.q = '';
+    queryFromStroke = false;
+    el.clear.className = 'dict-clear';
+    if (!filtersActive()) { selected = null; }
+    compute();
+  }
+
+  el.clear.addEventListener('click', function () { resetQuery(); el.q.focus(); });
+
+  el.strokeStage.addEventListener('click', function () {
+    if (!currentStroke) { return; }
+    var entry = kanjiByChar[String.fromCharCode(currentStroke)];
+    if (!entry) { return; }
+    stopStrokes();
+    el.q.value = entry[WORD];
+    state.q = entry[WORD];
+    queryFromStroke = true;
+    el.clear.className = 'dict-clear on';
+    compute();
+    select(entry[ID], true);
+  });
+  el.sheetClose.addEventListener('click', closeDetail);
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') { closeDetail(); }
+    if (e.key === '/' && document.activeElement !== el.q) { e.preventDefault(); el.q.focus(); }
+  });
+
+  var siteNav = document.querySelector('nav');
+
+  function headerOffset() {
+    var navH = siteNav ? siteNav.offsetHeight : 0;
+    var barH = el.bar ? el.bar.offsetHeight : 0;
+    return navH + barH + 20;
+  }
+
+  function measureSticky() {
+    var navH = siteNav ? siteNav.offsetHeight : 0;
+    var root = document.documentElement.style;
+    root.setProperty('--nav-h', navH + 'px');
+    root.setProperty('--sticky-top', headerOffset() + 'px');
+  }
+  window.addEventListener('resize', measureSticky);
+  window.addEventListener('load', measureSticky);
+
+  window.addEventListener('popstate', function () {
+    if (pushedEntries > 0) { pushedEntries -= 1; }
+    var id = location.hash.replace('#', '');
+    if (id && byId[id]) { select(id, false); }
+    else { clearEntry(); }
+  });
+
+  /* ---------- boot ---------------------------------------------------- */
+
+  function fetchJson(name) {
+    return fetch(DATA + name).then(function (r) {
+      if (!r.ok) { throw new Error(name + ' ' + r.status); }
+      return r.json();
+    });
+  }
+
+  Promise.all([fetchJson('dict-index.json'), fetchJson('dict-meta.json')])
+    .then(function (loaded) {
+      entries = loaded[0];
+      meta = loaded[1];
+
+      for (var i = 0; i < entries.length; i++) {
+        entries[i][MEANLC] = (entries[i][MEAN] || '').toLowerCase();
+        entries[i][ROMAJI] = toRomaji(entries[i][READ]);
+        byId[entries[i][ID]] = entries[i];
+        if (entries[i][TYPE] === 'k' && entries[i][WORD].length === 1) {
+          kanjiByChar[entries[i][WORD]] = entries[i];
+        }
+      }
+
+      // Only animate characters this dictionary can actually open.
+      STROKES = STROKES.filter(function (code) {
+        return !!kanjiByChar[String.fromCharCode(code)];
+      });
+      shuffleStrokes();
+
+      el.loading.hidden = true;
+      el.shell.hidden = false;
+      renderTabs();
+      renderBand();
+      renderChips();
+      compute();
+      measureSticky();
+
+      var id = location.hash.replace('#', '');
+      if (id) { select(id, false); }
+
+      return fetchJson('dict-detail.json');
+    })
+    .then(function (data) {
+      details = data;
+      if (selected) { select(selected, false); }
+    })
+    .catch(function (err) {
+      el.loading.textContent = 'The dictionary could not load. Refresh to try again.';
+      window.console && console.error(err);
+    });
+})();
+</script>
+
+<script src="site.js"></script>
+
+</body>
+</html>
