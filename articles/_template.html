@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- ===================================================================
+     FILL IN EVERY «PLACEHOLDER» BELOW, THEN DELETE THE ROBOTS TAG.
+     Paths are ../ because this file lives in /articles/.
+     =================================================================== -->
+
+<meta name="robots" content="noindex"><!-- DELETE THIS LINE when publishing -->
+
+<title>«Article Title» — Gogaku</title>
+<meta name="description" content="«One sentence, 150-160 characters, matching the excerpt on the articles page.»">
+<link rel="canonical" href="https://gogakuapp.com/articles/«slug».html">
+
+<link rel="icon" type="image/png" href="../assets/gogaku-favicon.png">
+<link rel="apple-touch-icon" sizes="180x180" href="../assets/gogaku-favicon.png">
+<meta name="apple-mobile-web-app-title" content="Gogaku">
+
+<meta property="og:title" content="«Article Title»">
+<meta property="og:description" content="«Same sentence as the meta description.»">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://gogakuapp.com/articles/«slug».html">
+<meta property="og:image" content="https://gogakuapp.com/assets/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="article:published_time" content="«2026-08-15»">
+<meta name="twitter:card" content="summary_large_image">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "«Article Title»",
+  "description": "«Same sentence as the meta description.»",
+  "datePublished": "«2026-08-15»",
+  "dateModified": "«2026-08-15»",
+  "author": { "@type": "Organization", "name": "Gogaku" },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Philomath Tech LLC",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://gogakuapp.com/assets/gogaku-favicon.png"
+    }
+  },
+  "mainEntityOfPage": "https://gogakuapp.com/articles/«slug».html"
+}
+</script>
+
+<link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="brand" aria-label="Gogaku — home">
+    <img src="../assets/gogaku-lockup-trademark.png" alt="Gogaku">
+  </a>
+  <div class="nav-links">
+    <a href="../articles.html" class="active">Articles</a>
+    <a href="../dictionary.html">Dictionary</a>
+    <a href="../kana.html">Kana</a>
+    <a href="../app.html">App</a>
+  </div>
+</nav>
+
+<!-- BODY -->
+<article class="prose">
+  <div class="container">
+
+    <h1>«Article Title»</h1>
+    <p class="post-meta">
+      <time datetime="«2026-08-15»">«August 15, 2026»</time> &middot; «8 min read»
+    </p>
+
+    <p>
+      «Opening paragraph. State the question the reader arrived with and
+      promise the answer. Two or three sentences, no throat-clearing.»
+    </p>
+
+    <!-- ---------- JUMP PILLS (optional; delete on short posts) ----------
+         Each pill needs a matching id on its heading:
+         <h2 id="your-anchor">…</h2>. Keep to 3–5 pills. -->
+    <nav class="jump-pills" aria-label="Jump to a section">
+      <a href="#«anchor-one»">«Label»</a>
+      <a href="#«anchor-two»">«Label»</a>
+      <a href="#«anchor-three»">«Label»</a>
+    </nav>
+
+    <h2 id="«anchor-one»">«First main heading»</h2>
+
+    <p>«Body paragraph. Plain prose, no jargon that isn't immediately defined.»</p>
+
+    <!-- ---------- JAPANESE EXAMPLE ---------- -->
+    <!-- Furigana uses <ruby>KANJI<rt>かな</rt></ruby>. Wrap only the kanji,
+         not the okurigana: 食<rt>た</rt>べる, never 食べる<rt>たべる</rt>. -->
+    <div class="jp-example">
+      <p class="jp"><ruby>私<rt>わたし</rt></ruby>は<ruby>寿司<rt>すし</rt></ruby>を<ruby>食<rt>た</rt></ruby>べます。</p>
+      <p class="romaji">Watashi wa sushi o tabemasu.</p>
+      <p class="en">I eat sushi.</p>
+    </div>
+
+    <!-- Several examples in a row: repeat .jp-example, or use this list. -->
+    <ul class="jp-list">
+      <li>
+        <span class="jp"><ruby>本<rt>ほん</rt></ruby>を<ruby>読<rt>よ</rt></ruby>みます。</span>
+        <span class="en">I read a book.</span>
+      </li>
+      <li>
+        <span class="jp"><ruby>水<rt>みず</rt></ruby>を<ruby>飲<rt>の</rt></ruby>みます。</span>
+        <span class="en">I drink water.</span>
+      </li>
+    </ul>
+
+    <h3>«Sub-heading»</h3>
+
+    <p>«More body copy. Link to a dictionary entry when a word deserves one:
+      <a href="../dictionary.html">look it up in the dictionary</a>.»</p>
+
+    <ul>
+      <li>«Bulleted point»</li>
+      <li>«Another point»</li>
+    </ul>
+
+    <!-- ---------- CALLOUTS ---------- -->
+    <p class="pull-quote">
+      «The one sentence you want someone to remember from this article.»
+    </p>
+
+    <p><strong>«A caveat, exception, or aside»</strong> — «the kind of thing a
+      textbook would bury in a footnote but that trips learners up constantly.»</p>
+
+    <h2>«Second main heading»</h2>
+
+    <p>«…»</p>
+
+    <!-- ---------- COMPARISON TABLE (optional) ---------- -->
+    <div class="table-wrap">
+      <table class="jp-table">
+        <thead>
+          <tr><th>«Form»</th><th>«Japanese»</th><th>«Meaning»</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>«Plain»</td><td class="jp">«食べる»</td><td>«to eat»</td></tr>
+          <tr><td>«Polite»</td><td class="jp">«食べます»</td><td>«to eat»</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>«Closing heading»</h2>
+
+    <p>«Wrap up. Restate the takeaway in one paragraph. Don't add new material here.»</p>
+
+    <p class="post-outro">
+      Gogaku pairs structured lessons with a dictionary, spaced-repetition
+      flashcards, and a conversation partner that only speaks the Japanese
+      you've actually learned. <a href="../app.html">See the app</a>.
+    </p>
+
+    <p class="post-outro">
+      Keep reading: <a href="«other-slug».html">«Title of a related article»</a>
+    </p>
+
+  </div>
+</article>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <img src="../assets/gogaku-wordmark-trademark.png" alt="Gogaku">
+    </div>
+    <div class="footer-links">
+      <a href="../about.html">About</a>
+      <a href="../privacy.html">Privacy</a>
+      <a href="../terms.html">Terms</a>
+      <a href="mailto:support@gogakuapp.com">Support</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    Gogaku is a product of Philomath Tech LLC, Austin, Texas.<br>
+    © 2026 Philomath Tech LLC. All rights reserved.
+  </div>
+</footer>
+
+<script src="../site.js"></script>
+
+</body>
+</html>

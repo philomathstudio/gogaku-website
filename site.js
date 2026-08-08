@@ -11,7 +11,7 @@
   var reduceMotion = window.matchMedia &&
                      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  var siteNav = document.querySelector('nav');
+  var siteNav = document.querySelector('body > nav');
   var dictBar = document.querySelector('.dict-bar');
   var anchor = dictBar || siteNav;
   if (!anchor) { return; }
