@@ -398,6 +398,8 @@
           var key = btn.getAttribute('data-key');
           var value = btn.getAttribute('data-value');
           state[key] = (state[key] === value) ? '' : value;
+          // Changing what is being filtered invalidates the open entry.
+          clearSelection();
           if (key === 'type') { pruneFilters(); renderTabs(); }
           renderBand();
           renderChips();
@@ -457,11 +459,17 @@
     Array.prototype.forEach.call(el.chips.querySelectorAll('.chip'), function (chip) {
       chip.addEventListener('click', function () {
         state[chip.getAttribute('data-key')] = '';
+        clearSelection();
         pruneFilters(); renderTabs(); renderBand(); renderChips(); compute(); measureSticky();
       });
     });
     document.getElementById('clear-all').addEventListener('click', function () {
       state.type = state.jlpt = state.pos = state.radical = state.radPos = state.category = '';
+      el.q.value = '';
+      state.q = '';
+      queryFromStroke = false;
+      el.clear.className = 'dict-clear';
+      clearSelection();
       pruneFilters(); renderTabs(); renderBand(); renderChips(); compute(); measureSticky();
     });
   }
@@ -796,6 +804,15 @@
     clearEntry();
   }
 
+  /* Drops the open entry without touching the query or the mode — callers
+     that change filters recompute straight after. */
+  function clearSelection() {
+    selected = null;
+    el.detail.classList.remove('open');
+    var rows = el.results.querySelectorAll('.row');
+    for (var i = 0; i < rows.length; i++) { rows[i].removeAttribute('aria-current'); }
+  }
+
   function clearEntry() {
     el.detail.classList.remove('open');
     selected = null;
@@ -993,6 +1010,8 @@
   el.q.addEventListener('input', function () {
     state.q = el.q.value;
     queryFromStroke = false;
+    // A new search is a new intent — never leave the old entry rendered.
+    if (selected) { clearSelection(); }
     el.clear.className = 'dict-clear' + (el.q.value.length ? ' on' : '');
     clearTimeout(timer);
     timer = setTimeout(compute, 110);
@@ -1007,7 +1026,7 @@
     el.q.value = ''; state.q = '';
     queryFromStroke = false;
     el.clear.className = 'dict-clear';
-    if (!filtersActive()) { selected = null; }
+    clearSelection();
     compute();
   }
 
