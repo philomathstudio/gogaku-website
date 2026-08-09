@@ -811,6 +811,13 @@
     el.detail.classList.remove('open');
     var rows = el.results.querySelectorAll('.row');
     for (var i = 0; i < rows.length; i++) { rows[i].removeAttribute('aria-current'); }
+
+    // Drop the #id too. Left behind, it re-selects the entry on the next
+    // reload (see boot) and on any popstate.
+    if (location.hash && history.replaceState) {
+      history.replaceState(null, '', location.pathname + location.search);
+      pushedEntries = 0;
+    }
   }
 
   function clearEntry() {
