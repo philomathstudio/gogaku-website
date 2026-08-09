@@ -471,8 +471,15 @@ ruby rt {
 .jp-table .jp { font-size: 19px; line-height: 1.8; }
 .jp-table tr:last-child td { border-bottom: 0; }
 
+/* body is a flex column (sticky footer), so children size to content unless
+   told otherwise. align-self keeps full-width layouts full width. */
+body > main,
+body > section,
+body > article,
+body > header,
+body > div { align-self: stretch; }
 body > main { flex: 1 0 auto; }
-footer { margin-top: auto; }
+footer { align-self: stretch; margin-top: auto; }
 
 /* FOOTER ================================================================ */
 footer {

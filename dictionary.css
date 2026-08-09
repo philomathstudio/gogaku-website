@@ -16,8 +16,6 @@
   --line:        #cbd5e1;   /* colors.border */
   --line-soft:   #e2e8f0;   /* colors.borderLight */
 
-  --card-radius: 20px;                               /* radius.xl */
-  --card-shadow: 0 4px 12px rgba(41, 74, 120, 0.10); /* shadows.lg */
 
   --jp: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic",
         "Noto Sans JP", "Meiryo", sans-serif;
@@ -108,7 +106,7 @@ nav {
   border-top: 1px solid #e0e3e8;
   border-bottom: 1px solid #e0e3e8;
 }
-.facet-band .wrap { padding: 12px 32px; }
+.facet-band .wrap { max-width: 1080px; margin: 0 auto; padding: 12px 32px; }
 .facet-scroll {
   display: flex;
   gap: 8px;
@@ -221,10 +219,14 @@ nav {
    browsing — results on the left, animation waiting on the right
    entry    — results on the left, the entry card on the right          */
 
+/* Browsing gets the full width — nothing occupies the second column until an
+   entry is opened, and the meanings need the room. */
 .dict-main[data-mode="idle"] { grid-template-columns: 1fr; }
+.dict-main[data-mode="browsing"] { grid-template-columns: 1fr; }
 .dict-main[data-mode="idle"] .results-col,
 .dict-main[data-mode="idle"] .detail,
 .dict-main[data-mode="browsing"] .detail,
+.dict-main[data-mode="browsing"] .stroke-stage,
 .dict-main[data-mode="entry"] .stroke-stage { display: none; }
 
 .stroke-stage {
@@ -235,8 +237,6 @@ nav {
   justify-content: center;
   min-height: 340px;
 }
-/* Line the waiting animation up with the top of the results list. */
-.dict-main[data-mode="browsing"] .stroke-stage { margin-top: 29px; }
 
 .dict-main[data-mode="idle"] .stroke-stage {
   position: static;
@@ -264,11 +264,9 @@ nav {
 /* RESULTS =============================================================== */
 /* Same surface treatment as .card, so the list and the entry read as siblings. */
 .results {
-  background: var(--surface);
+  background: none;
   border: 0;
-  border-radius: var(--card-radius);
-  overflow: hidden;
-  box-shadow: var(--card-shadow);
+  border-top: 1px solid var(--border);
 }
 .row {
   display: grid;
@@ -280,13 +278,14 @@ nav {
   background: none;
   border: 0;
   border-top: 1px solid var(--border-soft);
-  padding: 15px 26px;
+  padding: 15px 4px;
   cursor: pointer;
   font-family: inherit;
   transition: background 0.12s;
 }
 .row:first-child { border-top: 0; }
 .row:hover { background: var(--bg); }
+.row:last-child { border-bottom: 1px solid var(--border-soft); }
 .row[aria-current="true"] { background: var(--primary-soft); }
 
 .row-lead {
@@ -395,9 +394,7 @@ nav {
   max-height: calc(100vh - var(--sticky-top, 220px) - 28px);
   overflow-y: auto;
   overflow-x: hidden;
-  /* Padding + matching negative margin so the card shadows aren't clipped. */
-  padding: 8px;
-  margin: -8px;
+  padding: 0 8px 0 0;
   scrollbar-width: thin;
   scrollbar-color: #cbd5e1 transparent;
   overscroll-behavior: contain;
@@ -413,12 +410,14 @@ nav {
 .detail-scroll::-webkit-scrollbar-thumb:hover { background-color: #94a3b8; background-clip: content-box; }
 
 .card {
-  background: var(--surface);
-  border-radius: var(--card-radius);
-  box-shadow: var(--card-shadow);
-  padding: 24px 26px;
-  margin-bottom: 14px;
+  background: none;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 26px 0 0;
+  margin-bottom: 26px;
+  border-top: 1px solid var(--border);
 }
+.card:first-child { padding-top: 0; border-top: 0; }
 .card:last-child { margin-bottom: 0; }
 .card-label {
   font-size: 11px;
@@ -564,9 +563,7 @@ rt {
 }
 
 .detail-empty {
-  background: var(--surface);
-  border-radius: var(--card-radius);
-  box-shadow: var(--card-shadow);
+  background: none;
   padding: 72px 28px;
   text-align: center;
   color: var(--text-subtle);
