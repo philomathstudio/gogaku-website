@@ -89,7 +89,7 @@ body > nav {
 .to-top {
   position: fixed;
   right: 28px;
-  bottom: 72px;
+  bottom: 200px;
   z-index: 70;
   width: 44px;
   height: 44px;
@@ -549,7 +549,7 @@ footer {
   .prose a.post { padding: 26px 16px; margin: 0 -16px; }
   .prose a.post h2 { font-size: 20px; }
   footer { padding: 26px 20px 22px; }
-  .to-top { right: 18px; bottom: 56px; width: 40px; height: 40px; }
+  .to-top { right: 18px; bottom: 160px; width: 40px; height: 40px; }
   .footer-inner { flex-direction: column; align-items: flex-start; gap: 14px; }
   .jp-example { padding: 16px 18px; }
   .jp-example .jp, .jp-list .jp { font-size: 20px; }
