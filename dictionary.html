@@ -234,6 +234,37 @@
     return html;
   }
 
+  /* Every kanji in a vocabulary word links to its own entry, so you can study
+     the characters from the word side. Spans rather than buttons: <ruby> is
+     fussy about interactive descendants in Safari. */
+  function kanjiChars(text) {
+    var out = '', str = String(text || ''), i = 0;
+    while (i < str.length) {
+      var code = str.charCodeAt(i);
+      var size = (code >= 0xD800 && code <= 0xDBFF && i + 1 < str.length) ? 2 : 1;
+      var ch = str.substr(i, size);
+      var k = kanjiByChar[ch];
+      out += k
+        ? '<span class="kanji-link" role="link" tabindex="0" data-id="' + esc(k[ID]) +
+          '" title="Open ' + esc(ch) + '">' + esc(ch) + '</span>'
+        : esc(ch);
+      i += size;
+    }
+    return out;
+  }
+
+  function rubyLinked(segments, fallback) {
+    if (!segments || !segments.length) { return kanjiChars(fallback || ''); }
+    var html = '';
+    for (var i = 0; i < segments.length; i++) {
+      var base = kanjiChars(segments[i][0]);
+      html += segments[i][1]
+        ? '<ruby>' + base + '<rt>' + esc(segments[i][1]) + '</rt></ruby>'
+        : base;
+    }
+    return html;
+  }
+
   /* The kanji entry's own `reading` is its most common reading. Whichever of
      on'yomi / kun'yomi contains it gets the accent colour — it is not always
      kun'yomi. Falls back to a longest-prefix match, then to neither. */
@@ -673,6 +704,15 @@
         jr.addEventListener('click', function () { select(jr.getAttribute('data-id'), true); });
       });
 
+    Array.prototype.forEach.call(
+      el.detailScroll.querySelectorAll('.kanji-link'), function (kl) {
+        function go() { select(kl.getAttribute('data-id'), true); }
+        kl.addEventListener('click', go);
+        kl.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); }
+        });
+      });
+
     setMode();
     el.detail.classList.add('open');
     el.detailScroll.scrollTop = 0;
@@ -696,7 +736,12 @@
 
   function kanjiCards(entry, extra) {
     var html = '<div class="card">' + headChips(entry, extra, true);
-    html += '<div class="kanji-head"><div class="kanji-glyph">' + esc(entry[WORD]) + '</div>';
+    // Glyph and meaning share the left column, so the meaning sits level with
+    // the kun'yomi reading rather than dropping below the whole block.
+    html += '<div class="kanji-head"><div class="kanji-left">' +
+            '<div class="kanji-glyph">' + esc(entry[WORD]) + '</div>' +
+            '<div class="card-label">Meaning</div>' +
+            '<div class="meaning-val">' + esc(entry[MEAN]) + '</div></div>';
     html += '<div class="kanji-readings">';
     var primary = primaryReading(entry[READ], extra.on, extra.kun);
     if (extra.on) {
@@ -714,8 +759,6 @@
               esc(entry[READ]) + '</div>';
     }
     html += '</div></div>';
-    html += '<div style="margin-top:22px"><div class="card-label">Meaning</div>' +
-            '<div class="meaning-val">' + esc(entry[MEAN]) + '</div></div>';
     html += '</div>';
 
     if (extra.note) {
@@ -746,7 +789,7 @@
             '<div class="meaning-val">' + esc(entry[MEAN]) + '</div></div>';
     if (hasKanji) {
       html += '<div><div class="card-label">Kanji</div>' +
-              '<div class="kanji-val">' + ruby(extra.ruby, entry[WORD]) + '</div></div>';
+              '<div class="kanji-val">' + rubyLinked(extra.ruby, entry[WORD]) + '</div></div>';
     }
     html += '</div></div>';
 

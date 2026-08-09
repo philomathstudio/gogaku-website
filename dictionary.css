@@ -450,6 +450,9 @@ nav {
 
 /* kanji header */
 .kanji-head { display: flex; align-items: flex-start; gap: 28px; }
+/* left column: the glyph with its meaning beneath */
+.kanji-left { flex: none; }
+.kanji-left .card-label { margin-top: 46px; }
 .kanji-glyph {
   font-family: var(--jp);
   font-size: 92px;
@@ -457,7 +460,7 @@ nav {
   color: var(--kanji);
   flex: none;
 }
-.kanji-readings { flex: 1; min-width: 0; padding-top: 6px; }
+.kanji-readings { flex: 1; min-width: 0; padding-top: 6px; text-align: center; }
 .kanji-readings .val {
   font-family: var(--jp);
   font-size: 26px;
@@ -483,6 +486,7 @@ nav {
 }
 .vocab-cols { display: flex; gap: 40px; flex-wrap: wrap; }
 .vocab-cols > div { min-width: 0; }
+.vocab-cols > div:nth-child(2) { flex: 1; text-align: center; }
 .meaning-val { font-size: 20px; font-weight: 700; color: var(--text); }
 .kanji-val {
   font-family: var(--jp);
@@ -493,6 +497,30 @@ nav {
   line-height: 1.9;
 }
 .kanji-val rt { color: var(--text-subtle); }
+
+/* each kanji in a vocabulary word opens its own entry */
+.kanji-link {
+  color: var(--kanji);
+  text-decoration: underline;
+  text-decoration-color: var(--text);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 6px;
+  cursor: pointer;
+  transition: color 0.12s;
+  /* The gap keeps each character's underline its own line — adjacent
+     underlines otherwise join and read as a single link. */
+  margin-right: 6px;
+}
+.kanji-link:last-child { margin-right: 0; }
+.kanji-link:hover {
+  color: var(--kanji-hover, #a83f0e);
+  text-decoration-color: var(--kanji);
+}
+.kanji-link:focus-visible {
+  outline: 2px solid var(--kanji);
+  outline-offset: 3px;
+  border-radius: 3px;
+}
 
 /* jukugo */
 .juku-row {
