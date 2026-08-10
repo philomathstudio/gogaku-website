@@ -721,6 +721,72 @@ footer {
 .cl-swatch { width: 14px; height: 14px; border-radius: 4px; flex: none; }
 .cl-label { font-size: 15px; font-weight: 600; }
 
+/* Furigana / okurigana labeled diagrams. */
+.jp-graphic {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 32px 24px;
+  margin: 28px 0;
+  box-shadow: var(--shadow-sm);
+}
+.jp-graphic-gloss {
+  margin-top: 16px;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+.jp-graphic .g-kanji {
+  font-size: 80px;
+  line-height: 1;
+  font-weight: 500;
+  color: var(--kanji-accent);
+}
+.jp-graphic .g-reading {
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+}
+
+/* Furigana: reading stacked over the kanji, each part named to the right. */
+.fg-row { display: flex; align-items: center; }
+.fg-row.fg-reading-row { margin-bottom: 2px; }
+.fg-slot { width: 100px; display: flex; justify-content: center; }
+.fg-side {
+  width: 100px;
+  margin-left: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* Okurigana: kanji (reading above) then the trailing kana, labeled below. */
+.oku-row { display: flex; align-items: flex-start; }
+.oku-col { display: flex; flex-direction: column; align-items: center; }
+.oku-col .g-reading { margin-bottom: 2px; }
+.oku-spacer { height: 26px; }
+.oku-kana {
+  font-size: 80px;
+  line-height: 1;
+  font-weight: 500;
+  color: var(--text);
+  margin-left: 2px;
+}
+.oku-label {
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
 @media (max-width: 640px) {
   .kanji-grid { grid-template-columns: 1fr; }
   .kanji-card { flex-direction: column; text-align: center; gap: 16px; }
@@ -728,6 +794,9 @@ footer {
   .color-legend { grid-template-columns: 1fr; }
   .rp-desc { font-size: 13px; }
   .rp-name { width: 80px; }
+  .jp-graphic .g-kanji, .oku-kana { font-size: 64px; }
+  .fg-slot { width: 84px; }
+  .fg-side { width: 84px; }
 }
 
 /* ACCESSIBILITY & POLISH ================================================ */
