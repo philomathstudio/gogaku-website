@@ -141,6 +141,39 @@ nav {
   border-color: var(--tint, var(--oxford));
 }
 
+/* Radical-position pills: glyph only. The box shows which zone the variant
+   sits in — orange fill on a light box, inverting to white on the active pill. */
+.pill-glyph {
+  padding: 8px 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.pos-glyph {
+  position: relative;
+  display: block;
+  width: 19px;
+  height: 19px;
+  border: 1.5px solid var(--line);
+  border-radius: 4px;
+  background: #f8fafc;
+  overflow: hidden;
+}
+.pos-glyph .pg-fill { position: absolute; background: var(--kanji); }
+.pg-full { inset: 0; }
+.pg-left { left: 0; top: 0; bottom: 0; width: 40%; }
+.pg-right { right: 0; top: 0; bottom: 0; width: 40%; }
+.pg-top { left: 0; right: 0; top: 0; height: 40%; }
+.pg-bottom { left: 0; right: 0; bottom: 0; height: 40%; }
+.pos-glyph .pg-hole { position: absolute; inset: 30%; background: #f8fafc; }
+/* Active pill (orange bg): invert the glyph to read as white-on-tint. */
+.pill-glyph[aria-pressed="true"] .pos-glyph {
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.75);
+}
+.pill-glyph[aria-pressed="true"] .pg-fill { background: #fff; }
+.pill-glyph[aria-pressed="true"] .pg-hole { background: var(--tint, var(--oxford)); }
+
 /* radical grid */
 .rad-grid {
   display: grid;
