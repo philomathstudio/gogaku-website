@@ -655,7 +655,11 @@ rt {
   .dict-bar .wrap { padding: 10px 20px 0; }
   .facet-band .wrap { padding: 9px 20px; }
   .chips { padding: 9px 20px; }
-  .dict-main { grid-template-columns: 1fr; padding: 4px 20px 60px; gap: 0; }
+  /* minmax(0, ...) not plain 1fr: a bare `1fr` track is `minmax(auto, 1fr)`,
+     whose automatic minimum refuses to shrink below the entry's min-content.
+     One long headword and the track — and with it the page — outgrows the
+     viewport. The desktop rule above already guards this; so must this one. */
+  .dict-main { grid-template-columns: minmax(0, 1fr); padding: 4px 20px 60px; gap: 0; }
 
   #q {
     font-size: 16px;            /* below 16px iOS zooms the page on focus */
@@ -745,7 +749,15 @@ rt {
   .kanji-glyph { font-size: 74px; }
   .kanji-head { gap: 20px; }
   .vocab-reading { font-size: 36px; }
-  .vocab-cols { gap: 28px; }
+
+  /* Meaning above Kanji rather than beside it. Two columns leave neither
+     enough room on a phone, and a long kanji headword carries furigana that
+     cannot break mid-word. Matches how the app stacks them. */
+  .vocab-cols { display: block; gap: 0; }
+  .vocab-cols > div:nth-child(2) {
+    margin-top: 22px;
+    text-align: left;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
